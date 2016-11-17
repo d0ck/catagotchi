@@ -108,5 +108,5 @@ public class CatBrain {
 	private const float PAIN_DOWNTICK_FREQUENCY = 5.0f;
 	private const uint PAIN_DOWNTICK_AMPLITUDE = 10;
 
-	private const float EVENT_TICK_FREQUENCY = 1.0f;
+	private const float EVENT_TICK_FREQUENCY = 0.2f;
 }

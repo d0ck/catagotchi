@@ -22,7 +22,7 @@ public class CatAI : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		this.brain = new CatBrain(this, new RoamingState(this));
+		this.brain = new CatBrain(this, new NavigateToState(this, new Vector3(-5, 0, -2)));
 	}
 
 	void Update() {

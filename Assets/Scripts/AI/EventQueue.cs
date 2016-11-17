@@ -36,7 +36,7 @@ public class EventQueue
 
 	public AIEvent priority() {
 		if (priorityQueue.Count == 0) {
-			return null;
+			return new AIEvent(CatEvent.NONE);
 		}
 
 		return priorityQueue.First.aiEvent;
@@ -48,7 +48,7 @@ public class EventQueue
 	 * 
 	 */ 
 	public class LifeSpanQueue {
-		private const int MAX_EVENT_TIME = 5;
+		private const int MAX_EVENT_TICKS = 10;
 		private LifeSpanQueueNode head = new LifeSpanQueueNode();
 		private LifeSpanQueueNode tail;
 
@@ -57,7 +57,7 @@ public class EventQueue
 
 			LifeSpanQueueNode node = new LifeSpanQueueNode();
 			head.next = node;
-			for (int i = 0; i < MAX_EVENT_TIME; i++) {
+			for (int i = 0; i < MAX_EVENT_TICKS; i++) {
 				node.next = new LifeSpanQueueNode();
 				node = node.next;
 			}

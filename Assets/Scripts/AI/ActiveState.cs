@@ -1,4 +1,5 @@
-﻿
+﻿using UnityEngine;
+
 public class ActiveState {
 
 	protected CatAI cat;
@@ -10,7 +11,7 @@ public class ActiveState {
 	/**
 	 * General behavior
 	 */
-	public void Update() {
+	public virtual void Update() {
 		// doing nothing at the moment
 	}
 
