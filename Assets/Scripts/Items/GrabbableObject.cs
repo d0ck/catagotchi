@@ -4,12 +4,6 @@ using System.Collections;
 public class GrabbableObject : InteractionBase {
 
     protected Rigidbody rigidbody;
-
-    public float velocityFactor = 7500f;
-    protected Vector3 positionDelta;
-
-    public float rotationFactor = 400f;
-    protected Quaternion rotationDelta;
     
     public bool shouldHighlight;
     public Material highlightMaterial;
@@ -22,41 +16,55 @@ public class GrabbableObject : InteractionBase {
     public bool useOtherTransform;
     public Transform otherTransform;
 
-    protected GrabController controller;
-    protected bool isGrabbed;
-    protected bool isHighlighted;
+    [HideInInspector]
+    public GrabController controller;
+    [HideInInspector]
+    public bool isGrabbed;
+    [HideInInspector]
+    public bool isHighlighted;
 
     protected Transform interationPoint;
 
-    
     void Start () {
         rigidbody = GetComponent<Rigidbody>();
 
-        velocityFactor /= rigidbody.mass;
-        rotationFactor /= rigidbody.mass;
+        rigidbody.maxAngularVelocity = float.MaxValue;
+
+        AfterStart();
+    }
+
+    public virtual void AfterStart()
+    {
+
     }
 	
-	void Update () {
-
-        if (isGrabbed && controller != null)
+    void FixedUpdate()
+    {
+        if (rigidbody != null && isGrabbed && controller != null)
         {
-            // calculate a velocity to apply to the object to get it to it's original interaction point. Then apply it to the rigidbody
-            positionDelta = controller.transform.position - interationPoint.position;
+            float maxDistanceDelta = 10f;
 
-            rigidbody.velocity = positionDelta * velocityFactor * Time.fixedDeltaTime;
+            Quaternion rotationDelta;
+            Vector3 positionDelta;
 
             float angle;
             Vector3 axis;
 
             rotationDelta = controller.transform.rotation * Quaternion.Inverse(interationPoint.rotation);
+            positionDelta = controller.transform.position - interationPoint.position;
+
             rotationDelta.ToAngleAxis(out angle, out axis);
 
-            while (angle > 180)
+            angle = (angle > 180 ? angle -= 360 : angle);
+
+            if (angle != 0)
             {
-                angle -= 360;
+                Vector3 angularTarget = angle * axis;
+                rigidbody.angularVelocity = Vector3.MoveTowards(rigidbody.angularVelocity, angularTarget, maxDistanceDelta);
             }
 
-            rigidbody.angularVelocity = (Time.fixedDeltaTime * angle * axis) * rotationFactor;
+            Vector3 velocityTarget = positionDelta / Time.fixedDeltaTime;
+            rigidbody.velocity = Vector3.MoveTowards(rigidbody.velocity, velocityTarget, maxDistanceDelta);
         }
 
         PostUpdate();
@@ -87,9 +95,9 @@ public class GrabbableObject : InteractionBase {
         AfterOnGrab();
     }
 
-    public void OnUngrab(GrabController controller)
+    public void OnUngrab()
     {
-        this.controller = null;
+        controller = null;
         isGrabbed = false;
 
         AfterOnUnGrab();
@@ -103,6 +111,22 @@ public class GrabbableObject : InteractionBase {
     public virtual void AfterOnUnGrab()
     {
 
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (GetComponent<SoundEffect>() != null)
+        {
+            if (GetComponent<Collider>() != null && GetComponent<Collider>().material != null && 
+                collision.gameObject.GetComponent<Collider>() != null && collision.gameObject.GetComponent<Collider>().material != null)
+            {
+                GetComponent<SoundEffect>().PlaySound(GetComponent<Collider>().material, collision.gameObject.GetComponent<Collider>().material, collision.relativeVelocity.magnitude / 6f);
+            } else
+            {
+                GetComponent<SoundEffect>().PlaySound(collision.relativeVelocity.magnitude / 6f);
+            }
+            
+        }
     }
 
     public void OnHighlight(GrabController controller)
@@ -141,21 +165,24 @@ public class GrabbableObject : InteractionBase {
 
     public void OnUnhighlight(GrabController controller)
     {
-        this.controller = null;
-        isHighlighted = false;
-        
-        if (shouldHighlight)
+        if (controller == this.controller)
         {
-            GetComponent<Renderer>().materials = savedMaterials;
-        }
-        if (shouldUseGhost)
-        {
-            ghost.gameObject.SetActive(false);
-            for (int i = 0; i < transform.childCount; i++)
+            this.controller = null;
+            isHighlighted = false;
+
+            if (shouldHighlight)
             {
-                if (transform.GetChild(i).name != ghost.name)
+                GetComponent<Renderer>().materials = savedMaterials;
+            }
+            if (shouldUseGhost)
+            {
+                ghost.gameObject.SetActive(false);
+                for (int i = 0; i < transform.childCount; i++)
                 {
-                    transform.GetChild(i).gameObject.SetActive(true);
+                    if (transform.GetChild(i).name != ghost.name)
+                    {
+                        transform.GetChild(i).gameObject.SetActive(true);
+                    }
                 }
             }
         }
